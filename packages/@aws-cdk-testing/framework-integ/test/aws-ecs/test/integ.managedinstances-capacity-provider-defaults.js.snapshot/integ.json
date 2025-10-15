@@ -1,0 +1,13 @@
+{
+  "version": "48.0.0",
+  "testCases": {
+    "ManagedInstancesCapacityProvidersDefaults/DefaultTest": {
+      "stacks": [
+        "integ-managedinstances-capacity-provider-defaults"
+      ],
+      "assertionStack": "ManagedInstancesCapacityProvidersDefaults/DefaultTest/DeployAssert",
+      "assertionStackName": "ManagedInstancesCapacityProvidersDefaultsDefaultTestDeployAssert34131809"
+    }
+  },
+  "minimumCliVersion": "2.1027.0"
+}

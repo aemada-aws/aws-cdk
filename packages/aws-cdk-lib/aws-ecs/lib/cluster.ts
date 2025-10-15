@@ -1589,8 +1589,16 @@ export interface ManagedInstancesCapacityProviderProps {
    * This instance profile must contain the necessary IAM permissions for ECS container instances
    * to register with the cluster and run tasks. At minimum, it should include permissions for
    * ECS agent communication, ECR image pulling, and CloudWatch logging.
+   *
+   * If you are using Amazon ECS Managed Instances with the AWS-managed Infrastructure policy (`AmazonECSInfrastructureRolePolicyForManagedInstances`),
+   * the instance profile must be named `ecsInstanceRole`.
+   * If you are using a custom policy for the Infrastructure role, the instance profile can have an alternative name.
+   *
+   * @see https://docs.aws.amazon.com/AmazonECS/latest/developerguide/managed-instances-instance-profile.html
+   *
+   * @default - A new instance profile named 'ecsInstanceRole' will be created with the `AmazonECSInstanceRolePolicyForManagedInstances` managed policy
    */
-  readonly ec2InstanceProfile: iam.IInstanceProfile;
+  readonly ec2InstanceProfile?: iam.IInstanceProfile;
 
   /**
    * The VPC subnets where EC2 instances will be launched.
@@ -1665,6 +1673,16 @@ export class ManagedInstancesCapacityProvider extends Construct {
   readonly capacityProviderName: string;
 
   /**
+   * The IAM role that ECS uses to manage the infrastructure for the capacity provider
+   */
+  readonly infrastructureRole: iam.IRole;
+
+  /**
+   * The EC2 instance profile attached to instances launched by this capacity provider
+   */
+  readonly instanceProfile: iam.IInstanceProfile;
+
+  /**
    * The CloudFormation capacity provider resource
    */
   private capacityProvider: CfnCapacityProvider;
@@ -1681,12 +1699,31 @@ export class ManagedInstancesCapacityProvider extends Construct {
 
     // Create or use provided infrastructure role
     const roleId = `${id}Role`;
-    const infrastructureRole = props.infrastructureRole ?? new iam.Role(this, roleId, {
+    this.infrastructureRole = props.infrastructureRole ?? new iam.Role(this, roleId, {
       assumedBy: new iam.ServicePrincipal('ecs.amazonaws.com'),
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonECSInfrastructureRolePolicyForManagedInstances'),
       ],
     });
+
+    // Create or use provided instance profile
+    this.instanceProfile = props.ec2InstanceProfile ?? this.createDefaultInstanceProfile();
+
+    // Grant the default infrastructure role permission to pass the instance profile role to EC2
+    // This is only done when using the default infrastructure role, not user-provided roles.
+    // See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/managed-instances-instance-profile.html#create-instance-role
+    if (this.instanceProfile.role && !props.infrastructureRole) {
+      this.infrastructureRole.addToPrincipalPolicy(new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['iam:PassRole'],
+        resources: [this.instanceProfile.role.roleArn],
+        conditions: {
+          StringEquals: {
+            'iam:PassedToService': 'ec2.amazonaws.com',
+          },
+        },
+      }));
+    }
 
     // Handle capacity provider name generation similar to AsgCapacityProvider
     let capacityProviderName = props.capacityProviderName;
@@ -1706,9 +1743,9 @@ export class ManagedInstancesCapacityProvider extends Construct {
 
     // Build the managed instances provider configuration
     const managedInstancesProviderConfig: CfnCapacityProvider.ManagedInstancesProviderProperty = {
-      infrastructureRoleArn: infrastructureRole.roleArn,
+      infrastructureRoleArn: this.infrastructureRole.roleArn,
       instanceLaunchTemplate: {
-        ec2InstanceProfileArn: props.ec2InstanceProfile.instanceProfileArn,
+        ec2InstanceProfileArn: this.instanceProfile.instanceProfileArn,
         networkConfiguration: {
           subnets: props.subnets.map((subnet: ec2.ISubnet) => subnet.subnetId),
           ...(props.securityGroups && {
@@ -1747,6 +1784,29 @@ export class ManagedInstancesCapacityProvider extends Construct {
    */
   public bind(cluster: ICluster): void {
     this.capacityProvider.clusterName = cluster.clusterName;
+  }
+
+  /**
+   * Creates a default instance profile for ECS managed instances
+   * with a role that has the AmazonECSInstanceRolePolicyForManagedInstances policy.
+   *
+   * @see https://docs.aws.amazon.com/AmazonECS/latest/developerguide/managed-instances-instance-profile.html
+   */
+  private createDefaultInstanceProfile(): iam.IInstanceProfile {
+    // Create the role for ECS instances
+    const instanceRole = new iam.Role(this, 'InstanceRole', {
+      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonECSInstanceRolePolicyForManagedInstances'),
+      ],
+    });
+
+    // Create the instance profile
+    const instanceProfile = new iam.InstanceProfile(this, 'InstanceProfile', {
+      role: instanceRole,
+    });
+
+    return instanceProfile;
   }
 
   /**

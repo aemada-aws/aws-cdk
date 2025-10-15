@@ -1663,7 +1663,7 @@ new ecs.Ec2Service(this, 'EC2Service', {
 
 Managed Instances Capacity Providers allow you to use AWS-managed EC2 instances for your ECS tasks while providing more control over instance selection than standard Fargate. AWS handles the instance lifecycle, patching, and maintenance while you can specify detailed instance requirements.
 
-To create a Managed Instances Capacity Provider, you need to specify the required EC2 instance profile, and networking configuration. You can also define detailed instance requirements to control which types of instances are used for your workloads.
+To create a Managed Instances Capacity Provider, you can either bring your own infrastructure role and EC2 instance profile, or the construct will create default ones with the necessary managed policies (`AmazonECSInstanceRolePolicyForManagedInstances` and `AmazonECSInfrastructureRolePolicyForManagedInstances`). You can also define detailed instance requirements to control which types of instances are used for your workloads.
 
 ```ts
 declare const vpc: ec2.Vpc;
@@ -1674,8 +1674,8 @@ const cluster = new ecs.Cluster(this, 'Cluster', { vpc });
 
 // Create a Managed Instances Capacity Provider
 const miCapacityProvider = new ecs.ManagedInstancesCapacityProvider(this, 'MICapacityProvider', {
-  infrastructureRole,
-  ec2InstanceProfile: instanceProfile,
+  infrastructureRole, // Optional, if no role is provided provided a default role will be created with a role that has the AmazonECSInfrastructureRolePolicyForManagedInstances managed policy.
+  ec2InstanceProfile: instanceProfile,// Optional, if no profile is provided a default instance profile will be created with a role that has the AmazonECSInstanceRolePolicyForManagedInstances managed policy.
   subnets: vpc.privateSubnets,
   securityGroups: [new ec2.SecurityGroup(this, 'MISecurityGroup', { vpc })],
   instanceRequirements: {
@@ -1718,8 +1718,8 @@ declare const instanceProfile: iam.InstanceProfile;
 declare const vpc: ec2.Vpc;
 
 const miCapacityProvider = new ecs.ManagedInstancesCapacityProvider(this, 'MICapacityProvider', {
-  infrastructureRole,
-  ec2InstanceProfile: instanceProfile,
+  infrastructureRole, // Optional, if no role is provided provided a default role will be created with a role that has the AmazonECSInfrastructureRolePolicyForManagedInstances managed policy.
+  ec2InstanceProfile: instanceProfile,// Optional, if no profile is provided a default instance profile will be created with a role that has the AmazonECSInstanceRolePolicyForManagedInstances managed policy.
   subnets: vpc.privateSubnets,
   instanceRequirements: {
     // Required: CPU and memory constraints
