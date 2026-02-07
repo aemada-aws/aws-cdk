@@ -1,0 +1,20 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "a91ec0ed296efb9ca4a782e12747ce2976969f7319418cc374b42adc6e134b9d": {
+      "displayName": "aws-cdk-rds-cluster-availability-zone Template",
+      "source": {
+        "path": "aws-cdk-rds-cluster-availability-zone.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-c3f226f3": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "a91ec0ed296efb9ca4a782e12747ce2976969f7319418cc374b42adc6e134b9d.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}
