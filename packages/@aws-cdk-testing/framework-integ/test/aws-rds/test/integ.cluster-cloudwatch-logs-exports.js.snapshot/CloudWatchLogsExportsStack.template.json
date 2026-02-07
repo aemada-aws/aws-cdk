@@ -391,122 +391,6 @@
     }
    }
   },
-  "VPCRestrictDefaultSecurityGroupCustomResource59474679": {
-   "Type": "Custom::VpcRestrictDefaultSG",
-   "Properties": {
-    "ServiceToken": {
-     "Fn::GetAtt": [
-      "CustomVpcRestrictDefaultSGCustomResourceProviderHandlerDC833E5E",
-      "Arn"
-     ]
-    },
-    "DefaultSecurityGroupId": {
-     "Fn::GetAtt": [
-      "VPCB9E5F0B4",
-      "DefaultSecurityGroup"
-     ]
-    },
-    "Account": {
-     "Ref": "AWS::AccountId"
-    }
-   },
-   "UpdateReplacePolicy": "Delete",
-   "DeletionPolicy": "Delete"
-  },
-  "CustomVpcRestrictDefaultSGCustomResourceProviderRole26592FE0": {
-   "Type": "AWS::IAM::Role",
-   "Properties": {
-    "AssumeRolePolicyDocument": {
-     "Version": "2012-10-17",
-     "Statement": [
-      {
-       "Action": "sts:AssumeRole",
-       "Effect": "Allow",
-       "Principal": {
-        "Service": "lambda.amazonaws.com"
-       }
-      }
-     ]
-    },
-    "ManagedPolicyArns": [
-     {
-      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-     }
-    ],
-    "Policies": [
-     {
-      "PolicyName": "Inline",
-      "PolicyDocument": {
-       "Version": "2012-10-17",
-       "Statement": [
-        {
-         "Effect": "Allow",
-         "Action": [
-          "ec2:AuthorizeSecurityGroupIngress",
-          "ec2:AuthorizeSecurityGroupEgress",
-          "ec2:RevokeSecurityGroupIngress",
-          "ec2:RevokeSecurityGroupEgress"
-         ],
-         "Resource": [
-          {
-           "Fn::Join": [
-            "",
-            [
-             "arn:",
-             {
-              "Ref": "AWS::Partition"
-             },
-             ":ec2:",
-             {
-              "Ref": "AWS::Region"
-             },
-             ":",
-             {
-              "Ref": "AWS::AccountId"
-             },
-             ":security-group/",
-             {
-              "Fn::GetAtt": [
-               "VPCB9E5F0B4",
-               "DefaultSecurityGroup"
-              ]
-             }
-            ]
-           ]
-          }
-         ]
-        }
-       ]
-      }
-     }
-    ]
-   }
-  },
-  "CustomVpcRestrictDefaultSGCustomResourceProviderHandlerDC833E5E": {
-   "Type": "AWS::Lambda::Function",
-   "Properties": {
-    "Code": {
-     "S3Bucket": {
-      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
-     },
-     "S3Key": "a1acfc2b5f4f6b183fd2bb9863f486bc5edef6a357b355a070d9a0e502df418c.zip"
-    },
-    "Timeout": 900,
-    "MemorySize": 128,
-    "Handler": "__entrypoint__.handler",
-    "Role": {
-     "Fn::GetAtt": [
-      "CustomVpcRestrictDefaultSGCustomResourceProviderRole26592FE0",
-      "Arn"
-     ]
-    },
-    "Runtime": "nodejs22.x",
-    "Description": "Lambda function for removing all inbound/outbound rules from the VPC default security group"
-   },
-   "DependsOn": [
-    "CustomVpcRestrictDefaultSGCustomResourceProviderRole26592FE0"
-   ]
-  },
   "DatabaseClusterMysqlSubnets10EC6FA4": {
    "Type": "AWS::RDS::DBSubnetGroup",
    "Properties": {
@@ -585,12 +469,10 @@
      "error",
      "general",
      "slowquery",
-     "audit",
-     "instance",
-     "iam-db-auth-error"
+     "audit"
     ],
     "Engine": "aurora-mysql",
-    "EngineVersion": "8.0.mysql_aurora.3.09.0",
+    "EngineVersion": "8.0.mysql_aurora.3.08.0",
     "MasterUserPassword": {
      "Fn::Join": [
       "",
@@ -631,7 +513,7 @@
    "UpdateReplacePolicy": "Delete",
    "DeletionPolicy": "Delete"
   },
-  "DatabaseClusterMysqlwriterInstance4A50FBE6": {
+  "DatabaseClusterMysqlwriter9C0937B3": {
    "Type": "AWS::RDS::DBInstance",
    "Properties": {
     "DBClusterIdentifier": {
@@ -720,17 +602,15 @@
    "Type": "AWS::RDS::DBCluster",
    "Properties": {
     "CopyTagsToSnapshot": true,
-    "DBClusterParameterGroupName": "default.aurora-postgresql16",
+    "DBClusterParameterGroupName": "default.aurora-postgresql15",
     "DBSubnetGroupName": {
      "Ref": "DatabaseClusterPostgresqlSubnetsE0173DAA"
     },
     "EnableCloudwatchLogsExports": [
-     "postgresql",
-     "iam-db-auth-error",
-     "instance"
+     "postgresql"
     ],
     "Engine": "aurora-postgresql",
-    "EngineVersion": "16.4",
+    "EngineVersion": "15.14",
     "MasterUserPassword": {
      "Fn::Join": [
       "",
@@ -772,7 +652,7 @@
    "UpdateReplacePolicy": "Delete",
    "DeletionPolicy": "Delete"
   },
-  "DatabaseClusterPostgresqlwriterInstanceB16652DD": {
+  "DatabaseClusterPostgresqlwriterAD8947A3": {
    "Type": "AWS::RDS::DBInstance",
    "Properties": {
     "DBClusterIdentifier": {
@@ -790,24 +670,6 @@
    ],
    "UpdateReplacePolicy": "Delete",
    "DeletionPolicy": "Delete"
-  }
- },
- "Outputs": {
-  "ExportsOutputRefDatabaseClusterMysqlB6D501E494AA5328": {
-   "Value": {
-    "Ref": "DatabaseClusterMysqlB6D501E4"
-   },
-   "Export": {
-    "Name": "CloudWatchLogsExportsStack:ExportsOutputRefDatabaseClusterMysqlB6D501E494AA5328"
-   }
-  },
-  "ExportsOutputRefDatabaseClusterPostgresql0775776E85EBE50E": {
-   "Value": {
-    "Ref": "DatabaseClusterPostgresql0775776E"
-   },
-   "Export": {
-    "Name": "CloudWatchLogsExportsStack:ExportsOutputRefDatabaseClusterPostgresql0775776E85EBE50E"
-   }
   }
  },
  "Parameters": {
